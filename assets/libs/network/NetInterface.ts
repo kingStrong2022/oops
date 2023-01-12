@@ -25,6 +25,8 @@ export interface IRequestProtocol {
     channelid: number,
     /** 消息内容 */
     data?: any;
+    /** 服务 */
+    service?: number;
 }
 
 /** 响应协议 */

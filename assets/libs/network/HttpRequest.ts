@@ -40,8 +40,8 @@ export class HttpRequest {
     }
     oops.http.get(name, complete, error);
      */
-    get(name: string, completeCallback: Function, errorCallback: Function) {
-        this.sendRequest(name, null, false, completeCallback, errorCallback)
+    get(name: string, params: any, header: Object, completeCallback?: Function, errorCallback?: Function) {
+        this.sendRequest(name, params, header, false, completeCallback, errorCallback)
     }
 
     /**
@@ -62,8 +62,8 @@ export class HttpRequest {
     }
     oops.http.getWithParams(name, param, complete, error);
      */
-    getWithParams(name: string, params: any, completeCallback: Function, errorCallback: Function) {
-        this.sendRequest(name, params, false, completeCallback, errorCallback)
+    getWithParams(name: string, params: any, header: Object, completeCallback: Function, errorCallback: Function) {
+        this.sendRequest(name, params, header, false, completeCallback, errorCallback)
     }
 
     /**
@@ -73,7 +73,7 @@ export class HttpRequest {
      * @param errorCallback         请求失败回调方法
      */
     getByArraybuffer(name: string, completeCallback: Function, errorCallback: Function) {
-        this.sendRequest(name, null, false, completeCallback, errorCallback, 'arraybuffer', false);
+        this.sendRequest(name, null, {}, false, completeCallback, errorCallback, 'arraybuffer', false);
     }
 
     /**
@@ -84,13 +84,14 @@ export class HttpRequest {
      * @param errorCallback         请求失败回调方法
      */
     getWithParamsByArraybuffer(name: string, params: any, completeCallback: Function, errorCallback: Function) {
-        this.sendRequest(name, params, false, completeCallback, errorCallback, 'arraybuffer', false);
+        this.sendRequest(name, params, {}, false, completeCallback, errorCallback, 'arraybuffer', false);
     }
 
     /**
      * HTTP POST请求
      * @param name                  协议名
      * @param params                查询参数
+     * @param header                请求头
      * @param completeCallback      请求完整回调方法
      * @param errorCallback         请求失败回调方法
      * @example
@@ -105,8 +106,8 @@ export class HttpRequest {
     }
     oops.http.post(name, param, complete, error);
      */
-    post(name: string, params: any, completeCallback?: Function, errorCallback?: Function) {
-        this.sendRequest(name, params, true, completeCallback, errorCallback);
+    post(name: string, params: any, header: Object, completeCallback?: Function, errorCallback?: Function) {
+        this.sendRequest(name, params, header, true, completeCallback, errorCallback);
     }
 
     /** 取消请求中的请求 */
@@ -147,6 +148,7 @@ export class HttpRequest {
      */
     private sendRequest(name: string,
         params: any,
+        header: Object,
         isPost: boolean,
         completeCallback?: Function,
         errorCallback?: Function,
@@ -195,8 +197,13 @@ export class HttpRequest {
             xhr.open("GET", newUrl);
         }
 
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
-        // xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        // xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        for (const key in header) {
+            if (Object.prototype.hasOwnProperty.call(header, key)) {
+                xhr.setRequestHeader(key, header[key]);
+            }
+        }
 
         var data: any = {};
         data.url = url;
@@ -258,11 +265,15 @@ export class HttpRequest {
                         var data: any = JSON.parse(xhr.response);
                         if (data.code != null) {
                             /** 服务器错误码处理 */
-                            if (data.code == 0) {
-                                if (completeCallback) completeCallback(data.data);
+                            if (data.code == 200 || data.code == 0) {
+                                if (completeCallback) completeCallback(data.result);
                             }
                             else {
-                                if (errorCallback) errorCallback(data);
+                                if (errorCallback) errorCallback({
+                                    statusCode: 200,    
+                                    code: data.code,
+                                    msg: data.message
+                                });
                             }
                         }
                         else {
@@ -277,8 +288,8 @@ export class HttpRequest {
             xhr.send();
         }
         else {
-            xhr.send(paramsStr!);                // 根据服务器接受数据方式做选择
-            // xhr.send(JSON.stringify(params));
+            // xhr.send(paramsStr!);                // 根据服务器接受数据方式做选择
+            xhr.send(JSON.stringify(params));
         }
     }
 
